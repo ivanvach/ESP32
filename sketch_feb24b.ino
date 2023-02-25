@@ -1,3 +1,10 @@
+// this code is working
+// if WiFi is not connected or if there are no WiFi credentials in the EEPROM memory
+// than the code starts AP with name ESP32AP and password: password
+// at IP address 192.168.4.1 one can enter WiFi credentials
+
+
+
 #include <WiFi.h>
 #include <EEPROM.h>
 #include <ESPAsyncWebServer.h>
@@ -103,22 +110,29 @@ void handleRoot(AsyncWebServerRequest *request) {
 void handleSave(AsyncWebServerRequest *request) {
   String ssid = request->arg("ssid");
   String password = request->arg("password");
-     // Add null characters to the end of the SSID and password strings
-  ssid += '\0';
-  password += '\0';
+  request->redirect("/");
+  
   Serial.println("Saving WiFi credentials...");
+  
+  // Clear the EEPROM memory first
+  for (int i = 0; i < EEPROM_SIZE; i++) {
+    EEPROM.write(i, 0);
+  }
+  EEPROM.commit();
+
+  // Write the new SSID and password to the EEPROM
   for (int i = 0; i < ssid.length(); i++) {
     EEPROM.write(i, ssid[i]);
   }
   for (int i = 0; i < password.length(); i++) {
     EEPROM.write(i + SSID_SIZE, password[i]);
   }
-
   EEPROM.commit();
   Serial.println("Saved WiFi credentials. Restarting...");
   delay(2000);
   ESP.restart();
 }
+
 
 
 void clearCredentials() {
